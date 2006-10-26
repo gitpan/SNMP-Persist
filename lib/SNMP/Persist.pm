@@ -4,15 +4,15 @@ SNMP::Persist - The SNMP pass_persist threaded backend
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
-        use SNMP::Persist;
+        use SNMP::Persist qw(&define_oid &start_persister &define_subtree);
         use strict;
         use warnings;
 
@@ -89,6 +89,7 @@ my $mib : shared;
 my $base_oid : shared   = ".1.3.6.1.4.1.2021.240";
 my $conversation_thread;
 
+$|=1;
 
 sub define_subtree {
   my $subtree=shift;

@@ -2,3 +2,7 @@ Revision history for SNMP-Persist
 
 0.01    2006/10/25
         Initial version released
+
+0.02	2006/10/26
+	Example fixed in the documentation
+	A crucial fix in the module itself (let pipes be piping hot)
