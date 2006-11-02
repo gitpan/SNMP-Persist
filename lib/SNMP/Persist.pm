@@ -4,11 +4,11 @@ SNMP::Persist - The SNMP pass_persist threaded backend
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 SYNOPSIS
 
@@ -143,16 +143,16 @@ sub _conversation_update {
     if ( /PING\n/ ){
       print "PONG\n";
     } elsif ( /getnext\n/ ) {
-      lock($mib);
       #get next line with full oid
       my $req_oid=<STDIN>;
       if (! defined($mib)) {
-        print "NONEo\n" . $req_oid;
+        print "NONE\n";
         next; 
       }
       my $found=0;
       my $oid = _get_oid($req_oid); 
       #sort all saved oids to a table
+      lock($mib);
       my @s = sort { _oid_cmp($a, $b) } keys %{ $mib };
       for (my $i = 0; $i < @s; $i++) {
         #return first item higher then the requested one
@@ -168,13 +168,13 @@ sub _conversation_update {
         print "NONE\n";
       }
     } elsif ( /get\n/ ) {
-      lock($mib);
       my $req_oid=<STDIN>; #get next line with full oid
       if (! defined($mib)) {
         print "NONE\n";
         next;
       }
       my $oid = _get_oid($req_oid);
+      lock($mib);
       if (defined $oid && defined($mib->{$oid})) {
         print "$base_oid.$oid\n";	#print full oid
         print $mib->{$oid}[0]."\n";	#print type 

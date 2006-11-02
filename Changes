@@ -6,3 +6,8 @@ Revision history for SNMP-Persist
 0.02	2006/10/26
 	Example fixed in the documentation
 	A crucial fix in the module itself (let pipes be piping hot)
+
+0.03	2006/10/27
+	A nasty error in printing output for nonexisting subtree 
+	A requirements change in META.yml file (threads required)
+	Solved a deadlock problem associated with snmpd strange behaviour(?)
