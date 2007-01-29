@@ -4,11 +4,11 @@ SNMP::Persist - The SNMP pass_persist threaded backend
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -24,13 +24,13 @@ our $VERSION = '0.03';
         start_persister();
 
         #set first application number
-        my $index=1;
 
         #loop forever to update the values
         while(1) {
 
           my %subtree;
           my $gameName;
+          my $index=1;						#set first application number
 
           foreach $gameName ("game1", "game2") {                     #for each application
             $subtree{"1." . $index}=["INTEGER",$index];              #set game index data pair
@@ -86,6 +86,7 @@ our @EXPORT_OK=qw(&define_subtree &start_persister &define_oid);
 our @ISA=qw(Exporter);
 
 my $mib : shared;
+my $mutex	: shared;
 my $base_oid : shared   = ".1.3.6.1.4.1.2021.240";
 my $conversation_thread;
 
@@ -100,9 +101,9 @@ sub define_subtree {
   #will create a copy of it to allow sharing between threads
   #(sharing an array - empties an array :/ )
 
-  #lets lock $mib to hold queries till the update is finished
+  #lets lock $mutex to hold queries till the update is finished
   #or wait till the query is finished
-  lock($mib);
+  lock($mutex);
 
   $mib=&share({});
 
@@ -152,7 +153,7 @@ sub _conversation_update {
       my $found=0;
       my $oid = _get_oid($req_oid); 
       #sort all saved oids to a table
-      lock($mib);
+      lock($mutex);
       my @s = sort { _oid_cmp($a, $b) } keys %{ $mib };
       for (my $i = 0; $i < @s; $i++) {
         #return first item higher then the requested one
@@ -174,7 +175,7 @@ sub _conversation_update {
         next;
       }
       my $oid = _get_oid($req_oid);
-      lock($mib);
+      lock($mutex);
       if (defined $oid && defined($mib->{$oid})) {
         print "$base_oid.$oid\n";	#print full oid
         print $mib->{$oid}[0]."\n";	#print type 

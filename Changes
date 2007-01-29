@@ -11,3 +11,8 @@ Revision history for SNMP-Persist
 	A nasty error in printing output for nonexisting subtree 
 	A requirements change in META.yml file (threads required)
 	Solved a deadlock problem associated with snmpd strange behaviour(?)
+
+0.04	2007/01/29
+	fixed a panic in MUTEX_DESTROY() caused by wrong usage of mutex as a storage for something else (thanks to Cyriel de Grijs for pointing out the crash!)
+	changes	to the example in the manual - application counter initialized too early (thanks goes to Cyriel de Grijs again)
+	
