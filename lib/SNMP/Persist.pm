@@ -4,11 +4,11 @@ SNMP::Persist - The SNMP pass_persist threaded backend
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 SYNOPSIS
 
@@ -36,7 +36,7 @@ our $VERSION = '0.04';
             $subtree{"1." . $index}=["INTEGER",$index];              #set game index data pair
             $subtree{"2." . $index}=["STRING",$gameName];            #set game name data pair
             $subtree{"3." . $index}=["Counter32", 344.2 ];           #set total memory data pair
-            $index++;                                                next application
+            $index++;                                                #next application
           }
 
           #new values have arrived - notify the subtree controller
@@ -114,6 +114,14 @@ sub define_subtree {
 	$mib->{$value}[1]=$subtree->{$value}[1];
   } #foreach
 
+#do the sort here or after each getnext request
+#  #now, lets decide the order
+#  #sorted table of all oids
+#  my @s = sort { _oid_cmp($a, $b) } keys %{ $mib };
+#  #add a next_oid value to table of each oid
+#  for (my $i = 0; $i < @s; $i++) {
+#	$mib->{@s[$i]}[2]=@s[$i+1];
+#  } #for
 } #define_subtree-end
 
 
@@ -144,6 +152,7 @@ sub _conversation_update {
     if ( /PING\n/ ){
       print "PONG\n";
     } elsif ( /getnext\n/ ) {
+      lock($mutex);
       #get next line with full oid
       my $req_oid=<STDIN>;
       if (! defined($mib)) {
@@ -152,30 +161,39 @@ sub _conversation_update {
       }
       my $found=0;
       my $oid = _get_oid($req_oid); 
+      #we don't need the sort really, what a waste it was!
       #sort all saved oids to a table
-      lock($mutex);
-      my @s = sort { _oid_cmp($a, $b) } keys %{ $mib };
-      for (my $i = 0; $i < @s; $i++) {
-        #return first item higher then the requested one
-        if (_oid_cmp($oid, $s[$i]) == -1) {
-          print "$base_oid.".$s[$i]."\n";	#print full oid
-          print $mib->{$s[$i]}[0]."\n";		#print type
-          print $mib->{$s[$i]}[1]."\n";		#print value
-          $found=1;
-          last;
-        }
-      }
+      #my @s = sort { _oid_cmp($a, $b) } keys %{ $mib };
+      my ($oid_higher, $oid_hash);
+      foreach $oid_hash (keys %{ $mib }) {
+        #if higher then the requested one
+	if (_oid_cmp($oid, $oid_hash) == -1 ) {
+	  if (defined($oid_higher)) {
+	    #if lower the the highest so far
+	    if (_oid_cmp($oid_higher,$oid_hash) == 1) {
+	      $oid_higher=$oid_hash;  
+	    }	  
+	  } else {
+	    $oid_higher=$oid_hash;
+	  }
+	  $found=1;
+	}
+      } #for
       if (!$found) {
         print "NONE\n";
+      } else {
+        print "$base_oid.".$oid_higher."\n";   #print full oid
+        print $mib->{$oid_higher}[0]."\n";             #print type
+        print $mib->{$oid_higher}[1]."\n";             #print value
       }
     } elsif ( /get\n/ ) {
+      lock($mutex);
       my $req_oid=<STDIN>; #get next line with full oid
       if (! defined($mib)) {
         print "NONE\n";
         next;
       }
       my $oid = _get_oid($req_oid);
-      lock($mutex);
       if (defined $oid && defined($mib->{$oid})) {
         print "$base_oid.$oid\n";	#print full oid
         print $mib->{$oid}[0]."\n";	#print type 
@@ -185,9 +203,9 @@ sub _conversation_update {
       }
     } #if
   } #while
+#exit if snmpd has stopped
+exit(0);
 } #conversation_thread-end
-
-
 
 sub _oid_cmp {
   my ($x, $y) = @_;

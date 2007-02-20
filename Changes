@@ -16,3 +16,9 @@ Revision history for SNMP-Persist
 	fixed a panic in MUTEX_DESTROY() caused by wrong usage of mutex as a storage for something else (thanks to Cyriel de Grijs for pointing out the crash!)
 	changes	to the example in the manual - application counter initialized too early (thanks goes to Cyriel de Grijs again)
 	
+
+0.05	2007/02/16
+	Below problems would remain unnoticed without Pawel Krzesniak feedback - thanks!
+	 * modified the getnext algorithm - don't need to sort to find a successive item
+	 * scripts now dies gracefully when snmpd stops
+	 * wait for data to be gathered first, instead of answering immediately with NONE
